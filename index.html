@@ -878,8 +878,16 @@
 
   async function loadWorkers(){
     const { data, error } = await sb.from('trabajadores').select('*').order('nombre');
-    if(error){ console.error('Error al cargar personal', error); workers = []; return; }
+    if(error){
+      console.error('Error al cargar personal', error);
+      alert('DIAGNÓSTICO — Error al cargar personal:\n' + JSON.stringify(error, null, 2));
+      workers = [];
+      return;
+    }
     workers = data || [];
+    if(workers.length === 0){
+      alert('DIAGNÓSTICO — La consulta funcionó pero trajo 0 filas. Respuesta cruda: ' + JSON.stringify(data));
+    }
   }
 
   async function saveWorkers(){
