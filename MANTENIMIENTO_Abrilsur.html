@@ -1,0 +1,2139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mantenimiento Abrilsur</title>
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mantenimiento Abrilsur">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<!-- Librería para Captura de Pantalla JPG -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- Supabase (guardado en la nube + login) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --bg: #F5F6F3;
+    --bg-card: #FFFFFF;
+    --brand-dark: #000000;
+    --brand-olive: #788214;
+    --brand-yellow: #F0ED35;
+    --brand-light: #F2F5DB;
+    --text-primary: #1F241A;
+    --text-muted: #5C6354;
+    --line: #DCDEC8;
+    --ok: #2D6A4F;
+    --ok-bg: #E8F5E9;
+    --half: #B7791F;
+    --half-bg: #FEFCBF;
+    --no: #C53030;
+    --no-bg: #FFF5F5;
+    --radius: 12px;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; min-height: 100vh; }
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    display: flex;
+    justify-content: center;
+  }
+
+  #app {
+    width: 100%;
+    max-width: 480px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: var(--bg);
+  }
+
+  header.appbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: #000000;
+    color: #FFFFFF;
+    padding: 16px;
+    border-bottom: 3px solid var(--brand-olive);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  }
+
+  .brand-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .brand-titles h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    margin: 0;
+    line-height: 1.1;
+    color: #FFFFFF;
+    text-transform: uppercase;
+  }
+
+  .brand-titles small {
+    font-size: 11px;
+    color: var(--brand-yellow);
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: block;
+    margin-top: 2px;
+  }
+
+  .btn-drive-sync {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #FFF;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .weeknav {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 6px 10px;
+  }
+
+  .weeknav button {
+    background: none;
+    border: none;
+    color: #FFFFFF;
+    font-size: 20px;
+    padding: 2px 10px;
+    cursor: pointer;
+    border-radius: 6px;
+  }
+
+  .weeknav .range {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    color: #FFFFFF;
+    letter-spacing: 0.5px;
+  }
+
+  .weeknav .range small {
+    display: block;
+    color: #CCCCCC;
+    font-size: 10px;
+    font-weight: 400;
+  }
+
+  .search-nav {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+  }
+
+  .search-nav input {
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    background: rgba(255, 255, 255, 0.15);
+    color: #FFFFFF;
+  }
+
+  .search-nav input::placeholder { color: #CCCCCC; }
+  .search-nav input:focus { outline: none; border-color: var(--brand-yellow); background: rgba(255, 255, 255, 0.25); }
+
+  .tabs {
+    display: flex;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 104px;
+    z-index: 19;
+  }
+
+  .tabs button {
+    flex: 1;
+    padding: 12px 2px;
+    background: none;
+    border: none;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    text-transform: uppercase;
+  }
+
+  .tabs button.active {
+    color: #000000;
+    border-bottom-color: var(--brand-olive);
+  }
+
+  main { flex: 1; padding: 16px 16px 100px; }
+
+  .daypills { display: flex; gap: 6px; margin-bottom: 16px; }
+
+  .daypills button {
+    flex: 1;
+    padding: 10px 0;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--bg-card);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+
+  .daypills button.active {
+    background: var(--brand-olive);
+    color: #FFFFFF;
+    border-color: var(--brand-olive);
+  }
+
+  .worker {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  .worker-top { display: flex; align-items: center; gap: 12px; }
+
+  .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #000000;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .worker-name { font-weight: 700; font-size: 15px; flex: 1; color: var(--text-primary); }
+
+  .stamp-row { display: flex; gap: 8px; margin-top: 12px; }
+
+  .stamp {
+    flex: 1;
+    padding: 8px 4px;
+    border-radius: 8px;
+    border: 1.5px solid var(--line);
+    background: transparent;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--text-muted);
+  }
+
+  .stamp.sel-presente { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
+  .stamp.sel-media { background: var(--half-bg); border-color: var(--half); color: var(--half); }
+  .stamp.sel-ausente { background: var(--no-bg); border-color: var(--no); color: var(--no); }
+
+  .task-field { margin-top: 10px; }
+
+  .task-field textarea {
+    width: 100%;
+    resize: none;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text-primary);
+    background: var(--bg);
+  }
+
+  .empty { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 13px; }
+
+  .sum-card {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  .sum-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .sum-name { font-weight: 700; font-size: 15px; flex: 1; }
+  .sum-total { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px; color: var(--brand-olive); }
+
+  .sum-days { display: flex; gap: 4px; margin: 8px 0; }
+
+  .daychip {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+  }
+
+  .daychip.presente { background: var(--ok-bg); border: 1px solid var(--ok); color: var(--ok); }
+  .daychip.media { background: var(--half-bg); border: 1px solid var(--half); color: var(--half); }
+  .daychip.ausente { background: var(--no-bg); border: 1px solid var(--no); color: var(--no); }
+
+  .grand-total {
+    background: #000000;
+    color: #FFFFFF;
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+  }
+
+  .grand-total .label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--brand-yellow); }
+  .grand-total .amount { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 22px; color: #FFFFFF; }
+
+  .actions-bar { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+
+  .btn-secondary {
+    flex: 1;
+    min-width: 140px;
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--brand-olive);
+    cursor: pointer;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .btn-pdf {
+    background: #000000;
+    color: #FFFFFF;
+    border: 1px solid #000000;
+  }
+
+  .todo-card {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+    transition: all 0.2s ease;
+  }
+
+  .todo-card.estado-proceso { background: var(--half-bg); border-color: var(--half); }
+  .todo-card.estado-completado { background: #F9FAF8; border-color: var(--line); opacity: 0.7; }
+  .todo-card.estado-completado .todo-title { text-decoration: line-through; color: var(--text-muted); }
+
+  .todo-header { display: flex; align-items: flex-start; gap: 8px; }
+
+  .todo-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--brand-olive);
+    background: var(--brand-light);
+    padding: 2px 6px;
+    border-radius: 6px;
+  }
+
+  .todo-title { font-size: 14px; font-weight: 700; color: var(--text-primary); flex: 1; line-height: 1.3; }
+  .todo-tools { display: flex; align-items: center; gap: 4px; }
+  .btn-icon { border: none; background: none; font-size: 14px; cursor: pointer; padding: 2px 4px; color: var(--text-muted); }
+
+  .todo-photos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .todo-photo-item {
+    position: relative;
+    width: 100%;
+    height: 80px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+
+  .todo-photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .todo-photo-remove {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    line-height: 20px;
+    text-align: center;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .todo-material {
+    font-size: 12px;
+    color: var(--half);
+    background: rgba(183, 121, 31, 0.1);
+    border: 1px dashed var(--half);
+    border-radius: 6px;
+    padding: 6px 8px;
+    margin-top: 8px;
+  }
+
+  .todo-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; gap: 8px; flex-wrap: wrap; }
+
+  .todo-assignee-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #000000;
+    color: #FFFFFF;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+
+  .todo-actions { display: flex; align-items: center; gap: 6px; }
+
+  .btn-state {
+    border: 1px solid var(--line);
+    background: var(--bg-card);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--text-muted);
+  }
+
+  .btn-state.act-proceso { background: var(--half); color: #FFF; border-color: var(--half); }
+  .btn-state.act-completado { background: var(--ok); color: #FFF; border-color: var(--ok); }
+
+  .btn-del { border: none; background: none; color: var(--no); font-size: 16px; cursor: pointer; padding: 2px 6px; }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin: 18px 0 8px;
+  }
+
+  .fab {
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(calc(-240px + 16px));
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--brand-olive);
+    color: #FFF;
+    border: none;
+    font-size: 26px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 25;
+  }
+
+  @media (max-width: 500px) {
+    .fab { left: auto; right: 20px; transform: none; }
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 40;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .overlay.overlay-center {
+    align-items: center;
+    padding: 20px;
+  }
+
+  .overlay.overlay-center .sheet {
+    border-radius: 18px;
+  }
+
+  .sheet {
+    background: var(--bg-card);
+    width: 100%;
+    max-width: 480px;
+    border-radius: 18px 18px 0 0;
+    padding: 20px;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+
+  .worker-manage-row {
+    display: grid;
+    grid-template-columns: 1fr 92px auto;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .worker-manage-row input[type="text"] {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 13px;
+    background: #FFF;
+    width: 100%;
+  }
+  .jornal-input-wrap { position: relative; }
+  .jornal-input-wrap span.currency-prefix {
+    position: absolute;
+    left: 9px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 700;
+    pointer-events: none;
+  }
+  .jornal-input-wrap input[type="number"] {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 8px 8px 20px;
+    font-family: inherit;
+    font-size: 13px;
+    background: #FFF;
+    width: 100%;
+  }
+  .toggle-active {
+    border: 1px solid var(--no);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    background: var(--no-bg);
+    color: var(--no);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .toggle-active.on { border-color: var(--ok); background: var(--ok-bg); color: var(--ok); }
+  .manage-col-labels {
+    display: grid;
+    grid-template-columns: 1fr 92px auto;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+
+  .sheet h2 {
+    font-size: 16px;
+    margin: 0 0 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--brand-dark);
+  }
+
+  .field { margin-bottom: 12px; }
+  .field label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px; font-weight: 600; }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    background: #FFF;
+  }
+
+  .photo-options-grid {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .btn-photo-action {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--brand-light);
+    color: var(--brand-olive);
+    border: 1.5px dashed var(--brand-olive);
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .btn-primary {
+    width: 100%;
+    background: var(--brand-olive);
+    color: #FFF;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  /* PANTALLA DE LOGIN */
+  #loginScreen {
+    min-height: 100vh;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 24px;
+  }
+  #loginScreen h1 {
+    font-size: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 4px;
+    text-align: center;
+  }
+  #loginScreen .login-sub {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-bottom: 24px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  #loginScreen .field { margin-bottom: 12px; }
+  #loginError {
+    color: var(--no);
+    font-size: 13px;
+    margin-top: 8px;
+    text-align: center;
+    display: none;
+  }
+
+  /* ESTILOS DE IMPRESIÓN PARA NAVEGADOR */
+  #pdfPrintContainer { display: none; }
+
+  @media print {
+    body * { visibility: hidden; }
+    #app, #loginScreen { display: none !important; }
+    #pdfPrintContainer, #pdfPrintContainer * { visibility: visible; }
+    #pdfPrintContainer {
+      display: block !important;
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      background: #FFFFFF;
+      color: #000000;
+      padding: 0;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="loginScreen">
+  <h1>Mantenimiento Abrilsur</h1>
+  <div class="login-sub">Iniciá sesión</div>
+  <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="tu@abrilsur.com" autocomplete="username"></div>
+  <div class="field"><label>Contraseña</label><input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password"></div>
+  <button class="btn-primary" id="btnLogin">Entrar</button>
+  <div id="loginError"></div>
+</div>
+
+<div id="app" style="display:none;">
+  <div id="loading" class="loading">Cargando Mantenimiento Abrilsur…</div>
+  <div id="content" style="display:none;">
+    <header class="appbar">
+      <div class="brand-header-top">
+        <div class="brand-titles">
+          <h1>Mantenimiento Abrilsur</h1>
+          <small>Registro de Personal</small>
+        </div>
+        <button class="btn-drive-sync" id="btnLogout">🔒 Salir</button>
+      </div>
+
+      <div class="weeknav" id="weekNavBox">
+        <button id="prevWeek">‹</button>
+        <div class="range" id="weekRange"></div>
+        <button id="nextWeek">›</button>
+      </div>
+
+      <div class="weeknav" id="monthNavBox" style="display:none;">
+        <button id="prevMonth">‹</button>
+        <div class="range" id="monthRange"></div>
+        <button id="nextMonth">›</button>
+      </div>
+
+      <div class="search-nav" id="todoSearchBox" style="display:none;">
+        <input type="text" id="todoSearchInput" placeholder="🔍 Buscar pendiente por palabra...">
+      </div>
+    </header>
+
+    <div class="tabs">
+      <button id="tabRegistro" class="active">REGISTRO</button>
+      <button id="tabResumen">RESUMEN SEMANAL</button>
+      <button id="tabMensual">MENSUAL</button>
+      <button id="tabPendientes">PENDIENTES</button>
+    </div>
+
+    <main>
+      <div id="viewRegistro">
+        <div class="daypills" id="dayPills"></div>
+        <div id="workersList"></div>
+      </div>
+
+      <div id="viewResumen" style="display:none;">
+        <div id="summaryCaptureArea" style="background: var(--bg); padding: 8px; border-radius: 12px;">
+          <div id="summaryList"></div>
+          <div class="grand-total">
+            <div><div class="label">Total Semana</div></div>
+            <div class="amount" id="grandTotal">$0</div>
+          </div>
+        </div>
+        <div class="actions-bar">
+          <button class="btn-secondary btn-pdf" id="exportSummaryJpg">📷 Captura Resumen (JPG)</button>
+          <button class="btn-secondary" id="exportCsv">Exportar Semana (Excel)</button>
+          <button class="btn-secondary" id="exportBackup">Guardar Backup (JSON)</button>
+          <button class="btn-secondary" id="importBackup">Cargar Backup (JSON)</button>
+        </div>
+        <input type="file" id="fileBackupInput" accept=".json" style="display:none;">
+        <button class="btn-secondary" id="openManage" style="width:100%; margin-top:8px;">👥 Gestionar Personal y Jornales</button>
+      </div>
+
+      <div id="viewMensual" style="display:none;">
+        <div id="monthlyDetailList"></div>
+        <div class="grand-total">
+          <div><div class="label">Total del Mes</div></div>
+          <div class="amount" id="monthlyGrandTotal">$0</div>
+        </div>
+        <div class="actions-bar">
+          <button class="btn-secondary" id="exportMonthlyCsv">Exportar Mes (Excel)</button>
+        </div>
+      </div>
+
+      <div id="viewPendientes" style="display:none;">
+        <div id="todosList"></div>
+        <div class="actions-bar">
+          <button class="btn-secondary btn-pdf" id="exportTodosPdf">📄 Descargar PDF Pendientes</button>
+          <button class="btn-secondary" id="exportTodosCsv">Exportar Pendientes (Excel)</button>
+        </div>
+      </div>
+    </main>
+
+    <button class="fab" id="fabAdd">+</button>
+  </div>
+</div>
+
+<!-- Contenedor optimizado para Impresión/PDF -->
+<div id="pdfPrintContainer"></div>
+
+<script>
+(function(){
+  const SUPABASE_URL = 'https://iujvfpylzkjeeipaxxzj.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_49twpNKWQVliXQH-kRf-UA_acS7n0yl';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const DAYS = [
+    {key:'S', label:'Sáb', offset: 0},
+    {key:'L', label:'Lun', offset: 2},
+    {key:'Ma', label:'Mar', offset: 3},
+    {key:'Mi', label:'Mié', offset: 4},
+    {key:'J', label:'Jue', offset: 5},
+    {key:'V', label:'Vie', offset: 6}
+  ];
+
+  const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  let workers = [];       
+  let weekData = {};      
+  let todos = [];
+  let currentSaturday = getSaturday(new Date());
+  let currentDay = todayKey();
+  let currentTab = 'registro';
+  let selectedMonthYear = { month: new Date().getMonth(), year: new Date().getFullYear() };
+  let todoSearchTerm = '';
+
+  function todayKey(){
+    const d = new Date().getDay(); 
+    const map = {6:'S',1:'L',2:'Ma',3:'Mi',4:'J',5:'V'};
+    return map[d] || 'S';
+  }
+
+  function getSaturday(d){
+    const date = new Date(d);
+    const day = date.getDay();
+    const diff = (day === 6 ? 0 : -(day + 1));
+    date.setDate(date.getDate() + diff);
+    date.setHours(0,0,0,0);
+    return date;
+  }
+
+  function isoDate(d){
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+
+  function fmtShort(d){ return d.getDate()+' '+MESES[d.getMonth()].slice(0,3); }
+
+  function weekRangeLabel(saturday){
+    const fri = new Date(saturday); fri.setDate(fri.getDate()+6);
+    return fmtShort(saturday) + ' — ' + fmtShort(fri) + ' ' + fri.getFullYear();
+  }
+
+  function friEndOfWeek(saturday){
+    const fri = new Date(saturday); fri.setDate(fri.getDate()+6);
+    return fri;
+  }
+
+  function isTodayInWeek(saturday, dayKey){
+    const item = DAYS.find(d=>d.key===dayKey);
+    const d = new Date(saturday); d.setDate(d.getDate() + item.offset);
+    const t = new Date(); t.setHours(0,0,0,0);
+    return isoDate(d) === isoDate(t);
+  }
+
+  function money(n){
+    return '$' + Math.round(n).toLocaleString('es-AR');
+  }
+
+  function initials(name){
+    if(!name) return '??';
+    if(name === 'OTRO' || name === 'Otro (Tercerizado)') return 'OT';
+    return name.trim().split(/\s+/).slice(0,2).map(w=>w[0].toUpperCase()).join('');
+  }
+
+  function dateForDay(saturday, dayKey){
+    const item = DAYS.find(d=>d.key===dayKey);
+    const dt = new Date(saturday);
+    dt.setDate(dt.getDate() + item.offset);
+    return isoDate(dt);
+  }
+
+  async function loadWorkers(){
+    const { data, error } = await sb.from('trabajadores').select('*').order('nombre');
+    if(error){ console.error('Error al cargar personal', error); workers = []; return; }
+    workers = data || [];
+  }
+
+  async function saveWorkers(){
+    const rows = workers.map(w => ({ id:w.id, nombre:w.nombre, jornal:w.jornal, activo:w.activo }));
+    const { error } = await sb.from('trabajadores').upsert(rows, { onConflict:'id' });
+    if(error) console.error('Error al guardar personal', error);
+  }
+
+  async function loadWeek(saturday){
+    const dates = DAYS.map(d => dateForDay(saturday, d.key));
+    const { data, error } = await sb.from('registros').select('*').in('fecha', dates);
+    weekData = {};
+    if(error){ console.error('Error al cargar semana', error); return; }
+    (data || []).forEach(r => {
+      const dayItem = DAYS.find(d => dateForDay(saturday, d.key) === r.fecha);
+      if(!dayItem) return;
+      if(!weekData[r.trabajador_id]) weekData[r.trabajador_id] = {};
+      weekData[r.trabajador_id][dayItem.key] = { estado:r.estado, tarea:r.tarea||'', motivo:r.motivo||'' };
+    });
+  }
+
+  async function saveWeek(saturday){
+    const rows = [];
+    Object.keys(weekData).forEach(workerId => {
+      Object.keys(weekData[workerId]).forEach(dayKey => {
+        const entry = weekData[workerId][dayKey];
+        rows.push({
+          trabajador_id: workerId,
+          fecha: dateForDay(saturday, dayKey),
+          estado: entry.estado,
+          tarea: entry.tarea || '',
+          motivo: entry.motivo || ''
+        });
+      });
+    });
+    if(rows.length === 0) return;
+    const { error } = await sb.from('registros').upsert(rows, { onConflict:'trabajador_id,fecha' });
+    if(error) console.error('Error al guardar semana', error);
+  }
+
+  async function loadTodos(){
+    const { data, error } = await sb.from('pendientes').select('*').order('orden', { ascending:true });
+    if(error){ console.error('Error al cargar pendientes', error); todos = []; return; }
+    todos = (data || []).map(t => ({
+      id: t.id,
+      titulo: t.titulo,
+      assignee: t.assignee || '',
+      materiales: t.materiales || '',
+      estado: t.estado,
+      fotos: t.fotos || [],
+      orden: t.orden,
+      fecha: t.created_at ? t.created_at.slice(0,10) : ''
+    }));
+  }
+
+  function ensureEntry(workerId, dayKey){
+    if(!weekData[workerId]) weekData[workerId] = {};
+    if(!weekData[workerId][dayKey]) weekData[workerId][dayKey] = {estado:'ausente', tarea:'', motivo:''};
+    return weekData[workerId][dayKey];
+  }
+
+  function renderDayPills(){
+    const el = document.getElementById('dayPills');
+    el.innerHTML = '';
+    DAYS.forEach(d=>{
+      const btn = document.createElement('button');
+      btn.textContent = d.label;
+      if(d.key === currentDay) btn.classList.add('active');
+      if(isTodayInWeek(currentSaturday, d.key)) btn.classList.add('today');
+      btn.onclick = ()=>{ currentDay = d.key; renderDayPills(); renderWorkersList(); };
+      el.appendChild(btn);
+    });
+  }
+
+  function renderWorkersList(){
+    const el = document.getElementById('workersList');
+    const activos = workers.filter(w=>w.activo);
+    if(activos.length === 0){
+      el.innerHTML = `<div class="empty">Sin personal activo. Tocá + para agregar.</div>`;
+      return;
+    }
+    el.innerHTML = '';
+    const estadoLabelMap = { presente:'Presente', media:'Media jornada', ausente:'Ausente' };
+    activos.forEach(w=>{
+      const entry = ensureEntry(w.id, currentDay);
+      const card = document.createElement('div');
+      card.className = 'worker';
+      card.style.cursor = 'pointer';
+      const detalle = entry.tarea || entry.motivo || '';
+      card.innerHTML = `
+        <div class="worker-top">
+          <div class="avatar">${initials(w.nombre)}</div>
+          <div style="flex:1; min-width:0;">
+            <div class="worker-name">${escapeHtml(w.nombre)}</div>
+            ${detalle ? `<div style="font-size:12px; color:var(--text-muted); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(detalle)}</div>` : ''}
+          </div>
+          <div class="daychip ${entry.estado}" style="width:auto; padding:5px 10px; font-size:11px; white-space:nowrap;">${estadoLabelMap[entry.estado] || 'Ausente'}</div>
+        </div>
+      `;
+      card.onclick = ()=>openRegistroModal(w);
+      el.appendChild(card);
+    });
+  }
+
+  function openRegistroModal(w){
+    const entry = ensureEntry(w.id, currentDay);
+    const dayItem = DAYS.find(d=>d.key===currentDay);
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay overlay-center';
+    const fechaDia = new Date(dateForDay(currentSaturday, currentDay) + 'T00:00:00');
+    const fechaLabel = dayItem.label + ' · ' + fmtShort(fechaDia) + ' ' + fechaDia.getFullYear();
+    overlay.innerHTML = `
+      <div class="sheet">
+        <h2>${escapeHtml(w.nombre)} <span class="close" style="cursor:pointer;">✕</span></h2>
+        <div style="font-size:12px; color:var(--text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px; margin-bottom:14px;">${fechaLabel}</div>
+        <div class="stamp-row">
+          <button data-estado="presente" class="stamp">Presente</button>
+          <button data-estado="media" class="stamp">Media</button>
+          <button data-estado="ausente" class="stamp">Ausente</button>
+        </div>
+        <div class="task-field" id="modalTareaWrap" style="display:none;">
+          <label style="font-size:12px; color:var(--text-muted); display:block; margin:10px 0 4px; font-weight:600;">Tarea realizada</label>
+          <textarea id="modalTarea" rows="2" placeholder="Tarea realizada (opcional)">${escapeHtml(entry.tarea||'')}</textarea>
+        </div>
+        <div class="task-field" id="modalMotivoWrap" style="display:none;">
+          <label style="font-size:12px; color:var(--text-muted); display:block; margin:10px 0 4px; font-weight:600;">Observaciones / Motivo</label>
+          <textarea id="modalMotivo" rows="2" placeholder="Observaciones / Motivo (opcional)">${escapeHtml(entry.motivo||'')}</textarea>
+        </div>
+        <button class="btn-primary" id="btnGuardarRegistro">Guardar</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const close = ()=>{ overlay.remove(); renderWorkersList(); };
+    overlay.querySelector('.close').onclick = close;
+    overlay.onclick = (e)=>{ if(e.target===overlay) close(); };
+
+    const stampBtns = overlay.querySelectorAll('.stamp');
+    const tareaWrap = overlay.querySelector('#modalTareaWrap');
+    const motivoWrap = overlay.querySelector('#modalMotivoWrap');
+
+    function paintStamps(){
+      stampBtns.forEach(b=>{
+        b.classList.remove('sel-presente','sel-media','sel-ausente');
+        if(b.dataset.estado === entry.estado) b.classList.add('sel-'+entry.estado);
+      });
+      tareaWrap.style.display = (entry.estado === 'ausente') ? 'none' : '';
+      motivoWrap.style.display = (entry.estado === 'ausente' || entry.estado === 'media') ? '' : 'none';
+    }
+    paintStamps();
+
+    stampBtns.forEach(b=>{
+      b.onclick = ()=>{
+        entry.estado = b.dataset.estado;
+        paintStamps();
+      };
+    });
+
+    overlay.querySelector('#btnGuardarRegistro').onclick = ()=>{
+      entry.tarea = overlay.querySelector('#modalTarea').value;
+      entry.motivo = overlay.querySelector('#modalMotivo').value;
+      saveWeek(currentSaturday);
+      close();
+    };
+  }
+
+  function computeWorkerSummary(w){
+    let dias = 0;
+    const dayStates = [];
+    const tareas = [];
+    DAYS.forEach(d=>{
+      const e = (weekData[w.id] || {})[d.key];
+      const estado = e ? e.estado : 'ausente';
+      if(estado === 'presente') dias += 1;
+      else if(estado === 'media') dias += 0.5;
+      dayStates.push({key:d.key, estado});
+      
+      let detalle = [];
+      if(e && e.tarea && e.tarea.trim()) detalle.push(e.tarea.trim());
+      if(e && e.motivo && e.motivo.trim()) detalle.push('Obs: ' + e.motivo.trim());
+      if(detalle.length > 0){
+        tareas.push(d.label + ': ' + detalle.join(' - '));
+      }
+    });
+    return { dias, total: dias * w.jornal, dayStates, tareas };
+  }
+
+  function renderSummary(){
+    const el = document.getElementById('summaryList');
+    const activos = workers.filter(w=>w.activo);
+    if(activos.length === 0){
+      el.innerHTML = `<div class="empty">No hay registros cargados para esta semana.</div>`;
+      document.getElementById('grandTotal').textContent = money(0);
+      return;
+    }
+    let grand = 0;
+    el.innerHTML = '';
+    activos.forEach(w=>{
+      const s = computeWorkerSummary(w);
+      grand += s.total;
+      const card = document.createElement('div');
+      card.className = 'sum-card';
+      card.innerHTML = `
+        <div class="sum-head">
+          <div class="avatar" style="width:34px;height:34px;font-size:12px;">${initials(w.nombre)}</div>
+          <div class="sum-name">${escapeHtml(w.nombre)}</div>
+          <div class="sum-total">${money(s.total)}</div>
+        </div>
+        <div class="sum-days">
+          ${s.dayStates.map(d=>`<div class="daychip ${d.estado}">${d.key}</div>`).join('')}
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">${s.dias} día${s.dias===1?'':'s'} · Jornal ${money(w.jornal)}</div>
+        ${s.tareas.length ? `<div style="font-size:12px;color:var(--text-muted);margin-top:6px;"><strong>Tareas / Obs:</strong><br>${s.tareas.map(escapeHtml).join('<br>')}</div>` : ''}
+      `;
+      el.appendChild(card);
+    });
+    document.getElementById('grandTotal').textContent = money(grand);
+  }
+
+  function updateMonthNavLabel(){
+    document.getElementById('monthRange').innerHTML = MESES[selectedMonthYear.month] + ' ' + selectedMonthYear.year + '<small>usá ‹ › para cambiar de mes</small>';
+  }
+
+  async function goMonth(delta){
+    let newM = selectedMonthYear.month + delta;
+    let newY = selectedMonthYear.year;
+    if(newM < 0){ newM = 11; newY--; }
+    else if(newM > 11){ newM = 0; newY++; }
+    selectedMonthYear = { month: newM, year: newY };
+    updateMonthNavLabel();
+    await renderMensual();
+  }
+
+  async function renderMensual(){
+    updateMonthNavLabel();
+    const el = document.getElementById('monthlyDetailList');
+    el.innerHTML = '';
+    
+    const targetM = selectedMonthYear.month;
+    const targetY = selectedMonthYear.year;
+    
+    const totals = {};
+    workers.filter(w=>w.activo).forEach(w => totals[w.id] = { nombre: w.nombre, jornal: w.jornal, dias: 0, total: 0 });
+
+    let grand = 0;
+
+    const firstDay = isoDate(new Date(targetY, targetM, 1));
+    const lastDay = isoDate(new Date(targetY, targetM + 1, 0));
+    const { data, error } = await sb.from('registros').select('*').gte('fecha', firstDay).lte('fecha', lastDay);
+    if(error){ console.error('Error al cargar el mes', error); }
+    (data || []).forEach(r => {
+      if(totals[r.trabajador_id]){
+        if(r.estado === 'presente') totals[r.trabajador_id].dias += 1;
+        else if(r.estado === 'media') totals[r.trabajador_id].dias += 0.5;
+      }
+    });
+
+    workers.filter(w=>w.activo).forEach(w => {
+      const item = totals[w.id];
+      item.total = item.dias * item.jornal;
+      grand += item.total;
+
+      const card = document.createElement('div');
+      card.className = 'sum-card';
+      card.innerHTML = `
+        <div class="sum-head">
+          <div class="avatar" style="width:34px;height:34px;font-size:12px;">${initials(w.nombre)}</div>
+          <div class="sum-name">${escapeHtml(w.nombre)}</div>
+          <div class="sum-total">${money(item.total)}</div>
+        </div>
+        <div style="font-size:13px;color:var(--text-primary);margin-top:4px;">
+          <strong>${item.dias} días trabajados</strong> en el mes (Jornal ${money(item.jornal)})
+        </div>
+      `;
+      el.appendChild(card);
+    });
+
+    document.getElementById('monthlyGrandTotal').textContent = money(grand);
+  }
+
+  function renderPendientes(){
+    const el = document.getElementById('todosList');
+    el.innerHTML = '';
+
+    if(todos.length === 0){
+      el.innerHTML = `<div class="empty">No hay tareas pendientes. Tocá + para agregar una nueva tarea.</div>`;
+      return;
+    }
+
+    const term = todoSearchTerm.trim().toLowerCase();
+    let listData = todos.map((t, index) => ({ ...t, num: index + 1 }));
+    
+    if(term){
+      listData = listData.filter(t => {
+        let respName = '';
+        if(t.assignee === 'otro') respName = 'otro tercerizado';
+        else if(t.assignee) respName = (workers.find(w=>w.id===t.assignee)?.nombre || '').toLowerCase();
+        
+        return t.titulo.toLowerCase().includes(term) || 
+               (t.materiales && t.materiales.toLowerCase().includes(term)) ||
+               respName.includes(term);
+      });
+    }
+
+    if(listData.length === 0){
+      el.innerHTML = `<div class="empty">No se encontraron tareas con "${escapeHtml(todoSearchTerm)}".</div>`;
+      return;
+    }
+
+    const orden = { 'proceso': 1, 'pendiente': 2, 'completado': 3 };
+    const sorted = [...listData].sort((a,b) => (orden[a.estado] || 2) - (orden[b.estado] || 2));
+
+    let currentCat = '';
+
+    sorted.forEach(t => {
+      let catLabel = '';
+      if(t.estado === 'proceso') catLabel = 'EN PROCESO';
+      else if(t.estado === 'pendiente') catLabel = 'PENDIENTES';
+      else if(t.estado === 'completado') catLabel = 'COMPLETADAS';
+
+      if(catLabel !== currentCat){
+        currentCat = catLabel;
+        const lbl = document.createElement('div');
+        lbl.className = 'section-label';
+        lbl.textContent = currentCat;
+        el.appendChild(lbl);
+      }
+
+      const card = document.createElement('div');
+      card.className = `todo-card estado-${t.estado}`;
+      
+      let assigneeName = '';
+      if(t.assignee === 'otro'){
+        assigneeName = 'Otro (Tercerizado)';
+      } else if(t.assignee){
+        assigneeName = workers.find(w=>w.id===t.assignee)?.nombre || '';
+      }
+
+      const assigneeTag = assigneeName ? `<span class="todo-assignee-badge">👤 ${initials(assigneeName)} ${assigneeName === 'Otro (Tercerizado)' ? '(Tercerizado)' : ''}</span>` : '';
+      const materialBlock = t.materiales ? `<div class="todo-material">📦 <strong>Materiales / Trae:</strong> ${escapeHtml(t.materiales)}</div>` : '';
+      
+      let photosGridHtml = '';
+      if(t.fotos && t.fotos.length > 0){
+        photosGridHtml = `<div class="todo-photos-grid">` + 
+          t.fotos.map(f => `<div class="todo-photo-item"><img src="${f}" alt="Foto de tarea #${t.num}"></div>`).join('') + 
+        `</div>`;
+      }
+
+      card.innerHTML = `
+        <div class="todo-header">
+          <span class="todo-num">#${t.num}</span>
+          <div class="todo-title">${escapeHtml(t.titulo)}</div>
+          <div class="todo-tools">
+            <button class="btn-icon btn-move-up" title="Mover Arriba">▲</button>
+            <button class="btn-icon btn-move-down" title="Mover Abajo">▼</button>
+            <button class="btn-icon btn-edit" title="Editar">✏️</button>
+            <button class="btn-del" title="Eliminar">✕</button>
+          </div>
+        </div>
+        ${photosGridHtml}
+        ${materialBlock}
+        <div class="todo-meta">
+          <div>${assigneeTag}</div>
+          <div class="todo-actions">
+            <button class="btn-state ${t.estado==='proceso'?'act-proceso':''}" data-act="proceso">En Proceso</button>
+            <button class="btn-state ${t.estado==='completado'?'act-completado':''}" data-act="completado">Completada</button>
+          </div>
+        </div>
+      `;
+
+      card.querySelector('.btn-move-up').onclick = ()=>moveTodo(t.id, -1);
+      card.querySelector('.btn-move-down').onclick = ()=>moveTodo(t.id, 1);
+      card.querySelector('.btn-edit').onclick = ()=>openEditTodo(t);
+
+      card.querySelector('.btn-del').onclick = async ()=>{
+        todos = todos.filter(x => x.id !== t.id);
+        renderPendientes();
+        const { error } = await sb.from('pendientes').delete().eq('id', t.id);
+        if(error) console.error('Error al eliminar pendiente', error);
+      };
+
+      const btnProc = card.querySelector('[data-act="proceso"]');
+      const btnComp = card.querySelector('[data-act="completado"]');
+
+      btnProc.onclick = async ()=>{
+        const item = todos.find(x => x.id === t.id);
+        if(item){
+          item.estado = (item.estado === 'proceso') ? 'pendiente' : 'proceso';
+          renderPendientes();
+          const { error } = await sb.from('pendientes').update({ estado: item.estado }).eq('id', t.id);
+          if(error) console.error('Error al actualizar estado', error);
+        }
+      };
+
+      btnComp.onclick = async ()=>{
+        const item = todos.find(x => x.id === t.id);
+        if(item){
+          item.estado = (item.estado === 'completado') ? 'pendiente' : 'completado';
+          renderPendientes();
+          const { error } = await sb.from('pendientes').update({ estado: item.estado }).eq('id', t.id);
+          if(error) console.error('Error al actualizar estado', error);
+        }
+      };
+
+      el.appendChild(card);
+    });
+  }
+
+  async function moveTodo(id, delta){
+    const idx = todos.findIndex(x => x.id === id);
+    if(idx < 0) return;
+    const targetIdx = idx + delta;
+    if(targetIdx < 0 || targetIdx >= todos.length) return;
+
+    const a = todos[idx];
+    const b = todos[targetIdx];
+    todos[idx] = b;
+    todos[targetIdx] = a;
+    renderPendientes();
+
+    const { error } = await sb.from('pendientes').update({ orden: idx }).eq('id', b.id);
+    const { error: error2 } = await sb.from('pendientes').update({ orden: targetIdx }).eq('id', a.id);
+    if(error || error2) console.error('Error al reordenar pendientes', error || error2);
+  }
+
+  function compressImage(file, callback){
+    const reader = new FileReader();
+    reader.onload = function(event){
+      const img = new Image();
+      img.onload = function(){
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 800;
+        if(width > height && width > maxDim){
+          height *= maxDim / width;
+          width = maxDim;
+        } else if(height > maxDim){
+          width *= maxDim / height;
+          height = maxDim;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        callback(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function processMultipleFiles(files, callback){
+    if(!files || files.length === 0){ callback([]); return; }
+    let results = [];
+    let processed = 0;
+    Array.from(files).forEach((file) => {
+      compressImage(file, (base64) => {
+        results.push(base64);
+        processed++;
+        if(processed === files.length) callback(results);
+      });
+    });
+  }
+
+  function setupPhotoManager(container, initialPhotos){
+    let currentPhotos = [...(initialPhotos || [])];
+
+    const cameraInput = container.querySelector('#inputCamera');
+    const galleryInput = container.querySelector('#inputGallery');
+    const photosGrid = container.querySelector('#modalPhotosGrid');
+
+    function renderThumbnails(){
+      photosGrid.innerHTML = '';
+      currentPhotos.forEach((src, idx) => {
+        const item = document.createElement('div');
+        item.className = 'todo-photo-item';
+        item.innerHTML = `
+          <img src="${src}">
+          <button class="todo-photo-remove" type="button">✕</button>
+        `;
+        item.querySelector('.todo-photo-remove').onclick = (e)=>{
+          e.preventDefault();
+          currentPhotos.splice(idx, 1);
+          renderThumbnails();
+        };
+        photosGrid.appendChild(item);
+      });
+    }
+
+    cameraInput.onchange = (e) => {
+      if(e.target.files && e.target.files.length > 0){
+        processMultipleFiles(e.target.files, (newBase64List) => {
+          currentPhotos.push(...newBase64List);
+          renderThumbnails();
+          cameraInput.value = '';
+        });
+      }
+    };
+
+    galleryInput.onchange = (e) => {
+      if(e.target.files && e.target.files.length > 0){
+        processMultipleFiles(e.target.files, (newBase64List) => {
+          currentPhotos.push(...newBase64List);
+          renderThumbnails();
+          galleryInput.value = '';
+        });
+      }
+    };
+
+    renderThumbnails();
+
+    return {
+      getPhotos: () => currentPhotos
+    };
+  }
+
+  function openEditTodo(t){
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay';
+    
+    let optionsHtml = '<option value="">Sin Asignar</option>';
+    workers.filter(w=>w.activo).forEach(w => {
+      optionsHtml += `<option value="${w.id}" ${t.assignee===w.id?'selected':''}>${w.nombre} (${initials(w.nombre)})</option>`;
+    });
+    optionsHtml += `<option value="otro" ${t.assignee==='otro'?'selected':''}>Otro (Tercerizado)</option>`;
+
+    overlay.innerHTML = `
+      <div class="sheet">
+        <h2>Editar Tarea #${t.num||''} <span class="close" style="cursor:pointer;">✕</span></h2>
+        <div class="field"><label>Descripción de la Tarea</label><input type="text" id="editTodoTitle" value="${escapeHtml(t.titulo)}"></div>
+        <div class="field"><label>Designar Responsable</label><select id="editTodoAssignee">${optionsHtml}</select></div>
+        <div class="field"><label>Materiales Faltantes / Quién Trae (Opcional)</label><textarea id="editTodoMateriales" rows="2">${escapeHtml(t.materiales||'')}</textarea></div>
+        
+        <div class="field">
+          <label>Fotos Adjuntas</label>
+          <div class="photo-options-grid">
+            <label for="inputCamera" class="btn-photo-action">📷 Sacar Foto</label>
+            <label for="inputGallery" class="btn-photo-action">🖼️ Galería (Varias)</label>
+          </div>
+          <input type="file" id="inputCamera" accept="image/*" capture="environment" style="display:none;">
+          <input type="file" id="inputGallery" accept="image/*" multiple style="display:none;">
+          <div class="todo-photos-grid" id="modalPhotosGrid"></div>
+        </div>
+
+        <button class="btn-primary" id="saveEditTodo">Guardar Cambios</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelector('.close').onclick = ()=>overlay.remove();
+    overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
+
+    const photoMgr = setupPhotoManager(overlay, t.fotos || []);
+
+    overlay.querySelector('#saveEditTodo').onclick = async ()=>{
+      const titulo = overlay.querySelector('#editTodoTitle').value.trim();
+      const assignee = overlay.querySelector('#editTodoAssignee').value;
+      const materiales = overlay.querySelector('#editTodoMateriales').value.trim();
+
+      if(!titulo){ overlay.querySelector('#editTodoTitle').focus(); return; }
+      
+      const target = todos.find(x => x.id === t.id);
+      if(target){
+        target.titulo = titulo;
+        target.assignee = assignee;
+        target.materiales = materiales;
+        target.fotos = photoMgr.getPhotos();
+        overlay.remove();
+        renderPendientes();
+        const { error } = await sb.from('pendientes').update({
+          titulo, assignee: assignee || null, materiales: materiales || null, fotos: target.fotos
+        }).eq('id', t.id);
+        if(error) console.error('Error al editar pendiente', error);
+      }
+    };
+  }
+
+  function openAddTodo(){
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay';
+    
+    let optionsHtml = '<option value="">Sin Asignar</option>';
+    workers.filter(w=>w.activo).forEach(w => {
+      optionsHtml += `<option value="${w.id}">${w.nombre} (${initials(w.nombre)})</option>`;
+    });
+    optionsHtml += '<option value="otro">Otro (Tercerizado)</option>';
+
+    overlay.innerHTML = `
+      <div class="sheet">
+        <h2>Nueva Tarea Pendiente <span class="close" style="cursor:pointer;">✕</span></h2>
+        <div class="field"><label>Descripción de la Tarea</label><input type="text" id="todoTitle" placeholder="Ej. Reparar filtro de bomba de agua"></div>
+        <div class="field"><label>Designar Responsable</label><select id="todoAssignee">${optionsHtml}</select></div>
+        <div class="field"><label>Materiales Faltantes / Quién Trae (Opcional)</label><textarea id="todoMateriales" rows="2" placeholder="Ej. Falta sellador. Lo trae Damián"></textarea></div>
+        
+        <div class="field">
+          <label>Fotos Adjuntas</label>
+          <div class="photo-options-grid">
+            <label for="inputCamera" class="btn-photo-action">📷 Sacar Foto</label>
+            <label for="inputGallery" class="btn-photo-action">🖼️ Galería (Varias)</label>
+          </div>
+          <input type="file" id="inputCamera" accept="image/*" capture="environment" style="display:none;">
+          <input type="file" id="inputGallery" accept="image/*" multiple style="display:none;">
+          <div class="todo-photos-grid" id="modalPhotosGrid"></div>
+        </div>
+
+        <button class="btn-primary" id="saveNewTodo">Cargar Pendiente</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelector('.close').onclick = ()=>overlay.remove();
+    overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
+
+    const photoMgr = setupPhotoManager(overlay, []);
+
+    overlay.querySelector('#saveNewTodo').onclick = async ()=>{
+      const titulo = overlay.querySelector('#todoTitle').value.trim();
+      const assignee = overlay.querySelector('#todoAssignee').value;
+      const materiales = overlay.querySelector('#todoMateriales').value.trim();
+
+      if(!titulo){ overlay.querySelector('#todoTitle').focus(); return; }
+
+      const nuevaFila = {
+        titulo,
+        assignee: assignee || null,
+        materiales: materiales || null,
+        fotos: photoMgr.getPhotos(),
+        estado: 'pendiente',
+        orden: todos.length
+      };
+
+      const { data, error } = await sb.from('pendientes').insert(nuevaFila).select().single();
+      if(error){ alert('Error al guardar el pendiente: ' + error.message); return; }
+
+      todos.push({
+        id: data.id,
+        titulo,
+        assignee,
+        materiales,
+        fotos: nuevaFila.fotos,
+        estado: 'pendiente',
+        orden: data.orden,
+        fecha: isoDate(new Date())
+      });
+      overlay.remove();
+      renderPendientes();
+    };
+  }
+
+  // EXPORTAR A PDF / IMPRESIÓN DIRECTA SIN HOJA EN BLANCO
+  function exportTodosPdf(){
+    if(todos.length === 0){
+      alert("No hay tareas para generar el PDF.");
+      return;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay';
+    overlay.innerHTML = `
+      <div class="sheet">
+        <h2>Generar PDF <span class="close" style="cursor:pointer;">✕</span></h2>
+        <div class="field" style="display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" id="chkIncluirCompletadas" style="width:auto;" checked>
+          <label for="chkIncluirCompletadas" style="margin:0; font-size:14px; color:var(--text-primary); font-weight:500;">Incluir tareas completadas</label>
+        </div>
+        <button class="btn-primary" id="btnGenerarPdf">Generar PDF</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelector('.close').onclick = ()=>overlay.remove();
+    overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
+
+    overlay.querySelector('#btnGenerarPdf').onclick = ()=>{
+      const incluirCompletadas = overlay.querySelector('#chkIncluirCompletadas').checked;
+      overlay.remove();
+      generarPdfPendientes(incluirCompletadas);
+    };
+  }
+
+  function generarPdfPendientes(incluirCompletadas){
+    const listaAExportar = incluirCompletadas ? todos : todos.filter(t => t.estado !== 'completado');
+
+    if(listaAExportar.length === 0){
+      alert("No hay tareas para generar el PDF con ese filtro.");
+      return;
+    }
+
+    const now = new Date();
+    const dateFormatted = String(now.getDate()).padStart(2,'0') + '/' + String(now.getMonth()+1).padStart(2,'0') + '/' + now.getFullYear();
+
+    const container = document.getElementById('pdfPrintContainer');
+
+    let listItemsHtml = '';
+
+    listaAExportar.forEach((t, idx) => {
+      let resp = 'Sin asignar';
+      if(t.assignee === 'otro') resp = 'Otro (Tercerizado)';
+      else if(t.assignee) resp = workers.find(w=>w.id===t.assignee)?.nombre || 'Sin asignar';
+
+      const estadoTxt = t.estado === 'proceso' ? 'EN PROCESO' : (t.estado === 'completado' ? 'COMPLETADA' : 'PENDIENTE');
+      
+      let mat = '';
+      if(t.materiales){
+        mat = `<div style="margin-top: 3px; font-size: 11px; color: #B7791F;">📦 <strong>Materiales:</strong> ${escapeHtml(t.materiales)}</div>`;
+      }
+
+      let imgsHtml = '';
+      if(t.fotos && t.fotos.length > 0){
+        imgsHtml = `<div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;">` + 
+          t.fotos.map(f => `<img src="${f}" style="width:80px; height:58px; object-fit:cover; border-radius:4px; border:1px solid #CCCCCC; display:block;">`).join('') + 
+        `</div>`;
+      }
+
+      listItemsHtml += `
+        <div style="border: 1px solid #999999; border-radius: 6px; padding: 6px 10px; margin-bottom: 5px; page-break-inside: avoid; background: #FFFFFF;">
+          <div style="font-size: 12px; font-weight: bold; color: #000000; line-height: 1.25;">#${idx+1} - ${escapeHtml(t.titulo)}</div>
+          <div style="margin-top: 2px; font-size: 10px; color: #444444;"><strong>Resp:</strong> ${escapeHtml(resp)} &nbsp;|&nbsp; <strong>Estado:</strong> ${escapeHtml(estadoTxt)}</div>
+          ${mat}
+          ${imgsHtml}
+        </div>
+      `;
+    });
+
+    container.innerHTML = `
+      <div style="background:#000000; color:#FFFFFF; padding:8px 12px; border-radius:6px; margin-bottom:8px; border-bottom:3px solid #788214;">
+        <h2 style="margin:0; font-size:15px; text-transform:uppercase; color:#FFFFFF; font-weight:bold;">Mantenimiento Abrilsur (${dateFormatted})</h2>
+        <div style="font-size:10px; color:#F0ED35; font-weight:bold; margin-top:2px; letter-spacing:0.5px;">LISTADO DE TAREAS Y PENDIENTES DE OBRA</div>
+      </div>
+      ${listItemsHtml}
+    `;
+
+    setTimeout(() => {
+      window.print();
+    }, 200);
+  }
+
+
+  function exportSummaryJpg(){
+    const captureTarget = document.getElementById('summaryCaptureArea');
+    const wrapper = document.createElement('div');
+    wrapper.style.padding = '20px';
+    wrapper.style.background = '#F5F6F3';
+    wrapper.style.fontFamily = 'Plus Jakarta Sans, sans-serif';
+    wrapper.style.width = '480px';
+    
+    wrapper.innerHTML = `
+      <div style="background:#000; color:#FFF; padding:16px; border-radius:12px; margin-bottom:14px; text-align:center; border-bottom: 3px solid #788214;">
+        <h2 style="margin:0; font-size:18px; text-transform:uppercase;">Mantenimiento Abrilsur</h2>
+        <div style="font-size:12px; color:#F0ED35; font-weight:bold; margin-top:4px;">RESUMEN DE LIQUIDACIÓN SEMANAL</div>
+        <div style="font-size:11px; color:#DDD; margin-top:2px;">${weekRangeLabel(currentSaturday)}</div>
+      </div>
+    ` + captureTarget.innerHTML;
+
+    document.body.appendChild(wrapper);
+
+    html2canvas(wrapper, { scale: 2, backgroundColor: '#F5F6F3' }).then(canvas => {
+      document.body.removeChild(wrapper);
+      const link = document.createElement('a');
+      link.download = `Mantenimiento_AbrilSur_Semana (${isoDate(currentSaturday)} al ${isoDate(friEndOfWeek(currentSaturday))}).jpg`;
+      link.href = canvas.toDataURL('image/jpeg', 0.9);
+      link.click();
+    });
+  }
+
+  async function exportBackupData(){
+    const [tr, re, pe] = await Promise.all([
+      sb.from('trabajadores').select('*'),
+      sb.from('registros').select('*'),
+      sb.from('pendientes').select('*')
+    ]);
+    if(tr.error || re.error || pe.error){
+      alert('Error al generar el backup: ' + (tr.error||re.error||pe.error).message);
+      return;
+    }
+    const data = { trabajadores: tr.data, registros: re.data, pendientes: pe.data, exportado: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `AbrilSur_Backup_${isoDate(new Date())}.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function importBackupData(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = async function(evt){
+      try {
+        const data = JSON.parse(evt.target.result);
+        if(data.trabajadores && data.trabajadores.length) await sb.from('trabajadores').upsert(data.trabajadores, { onConflict:'id' });
+        if(data.registros && data.registros.length) await sb.from('registros').upsert(data.registros, { onConflict:'trabajador_id,fecha' });
+        if(data.pendientes && data.pendientes.length) await sb.from('pendientes').upsert(data.pendientes, { onConflict:'id' });
+        alert('Copia de seguridad restaurada con éxito.');
+        location.reload();
+      } catch(err){ alert('Error al leer el archivo de backup: ' + err.message); }
+    };
+    reader.readAsText(file);
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  async function goWeek(delta){
+    currentSaturday.setDate(currentSaturday.getDate() + delta*7);
+    currentSaturday = getSaturday(currentSaturday);
+    document.getElementById('weekRange').innerHTML = weekRangeLabel(currentSaturday) + '<small>usá ‹ › para moverte</small>';
+    await loadWeek(currentSaturday);
+    renderDayPills();
+    if(currentTab === 'registro') renderWorkersList();
+    else if(currentTab === 'resumen') renderSummary();
+  }
+
+  function switchTab(tab){
+    currentTab = tab;
+    document.getElementById('tabRegistro').classList.toggle('active', tab==='registro');
+    document.getElementById('tabResumen').classList.toggle('active', tab==='resumen');
+    document.getElementById('tabMensual').classList.toggle('active', tab==='mensual');
+    document.getElementById('tabPendientes').classList.toggle('active', tab==='pendientes');
+    
+    document.getElementById('viewRegistro').style.display = tab==='registro' ? '' : 'none';
+    document.getElementById('viewResumen').style.display = tab==='resumen' ? '' : 'none';
+    document.getElementById('viewMensual').style.display = tab==='mensual' ? '' : 'none';
+    document.getElementById('viewPendientes').style.display = tab==='pendientes' ? '' : 'none';
+    
+    document.getElementById('weekNavBox').style.display = (tab==='registro'||tab==='resumen') ? 'flex' : 'none';
+    document.getElementById('monthNavBox').style.display = tab==='mensual' ? 'flex' : 'none';
+    document.getElementById('todoSearchBox').style.display = tab==='pendientes' ? 'flex' : 'none';
+    
+    document.getElementById('fabAdd').style.display = (tab==='registro' || tab==='pendientes') ? 'flex' : 'none';
+
+    if(tab==='resumen') renderSummary();
+    if(tab==='mensual') renderMensual();
+    if(tab==='pendientes') renderPendientes();
+  }
+
+  function openAddModal(){
+    if(currentTab === 'pendientes') openAddTodo();
+    else openAddWorker();
+  }
+
+  function openAddWorker(){
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay';
+    overlay.innerHTML = `
+      <div class="sheet">
+        <h2>Nuevo Integrante <span class="close" style="cursor:pointer;">✕</span></h2>
+        <div class="field"><label>Nombre y Apellido</label><input type="text" id="newName" placeholder="Ej. CARLOS RODRIGUEZ"></div>
+        <div class="field"><label>Jornal Diario ($)</label><input type="number" id="newRate" placeholder="Ej. 38000" inputmode="numeric"></div>
+        <button class="btn-primary" id="saveNewWorker">Agregar al Personal</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelector('.close').onclick = ()=>overlay.remove();
+    overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
+    overlay.querySelector('#saveNewWorker').onclick = ()=>{
+      const nombre = overlay.querySelector('#newName').value.trim().toUpperCase();
+      const jornal = parseFloat(overlay.querySelector('#newRate').value) || 0;
+      if(!nombre){ overlay.querySelector('#newName').focus(); return; }
+      workers.push({ id: 'w_' + Date.now(), nombre, jornal, activo: true });
+      saveWorkers();
+      overlay.remove();
+      renderWorkersList();
+    };
+  }
+
+  function openManage(){
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay overlay-center';
+    const sheet = document.createElement('div');
+    sheet.className = 'sheet';
+    sheet.innerHTML = `<h2>Gestionar Personal <span class="close" style="cursor:pointer;">✕</span></h2><div class="manage-col-labels"><span>Nombre</span><span>Jornal ($)</span><span>Estado</span></div><div id="manageList"></div>`;
+    overlay.appendChild(sheet);
+    document.body.appendChild(overlay);
+    overlay.querySelector('.close').onclick = closeAndRefresh;
+    overlay.onclick = (e)=>{ if(e.target===overlay) closeAndRefresh(); };
+
+    function closeAndRefresh(){
+      overlay.remove();
+      renderSummary();
+      if(currentTab==='registro') renderWorkersList();
+    }
+
+    const list = sheet.querySelector('#manageList');
+    function paint(){
+      list.innerHTML = '';
+      workers.forEach(w=>{
+        const row = document.createElement('div');
+        row.className = 'worker-manage-row';
+        row.innerHTML = `
+          <input type="text" value="${escapeHtml(w.nombre)}">
+          <div class="jornal-input-wrap"><span class="currency-prefix">$</span><input type="number" value="${w.jornal}"></div>
+          <button class="toggle-active ${w.activo?'on':''}">${w.activo?'Activo':'Inactivo'}</button>
+        `;
+        const nameInput = row.querySelector('input[type="text"]');
+        const rateInput = row.querySelector('input[type="number"]');
+        const toggleBtn = row.querySelector('.toggle-active');
+        nameInput.onchange = ()=>{ w.nombre = nameInput.value.trim().toUpperCase() || w.nombre; saveWorkers(); };
+        rateInput.onchange = ()=>{ w.jornal = parseFloat(rateInput.value)||0; saveWorkers(); };
+        toggleBtn.onclick = ()=>{
+          w.activo = !w.activo;
+          toggleBtn.classList.toggle('on', w.activo);
+          toggleBtn.textContent = w.activo ? 'Activo' : 'Inactivo';
+          saveWorkers();
+        };
+        list.appendChild(row);
+      });
+    }
+    paint();
+  }
+
+  function exportCsv(){
+    const rangeText = weekRangeLabel(currentSaturday);
+    let totalSemana = 0;
+
+    let excelHtml = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8">
+        <style>
+          table { border-collapse: collapse; font-family: Arial, sans-serif; }
+          th { background-color: #000000; color: #FFFFFF; font-weight: bold; text-align: center; border: 1px solid #788214; padding: 8px; }
+          .sub-header { background-color: #788214; color: #FFFFFF; font-weight: bold; text-align: center; }
+          td { border: 1px solid #DCDEC8; padding: 6px; text-align: center; vertical-align: middle; }
+          .nombre { text-align: left; font-weight: bold; background-color: #F9FAF8; }
+          .num { text-align: right; }
+          .presente { background-color: #E8F5E9; color: #2D6A4F; font-weight: bold; }
+          .media { background-color: #FEFCBF; color: #B7791F; font-weight: bold; }
+          .ausente { background-color: #FFF5F5; color: #C53030; }
+          .total-row { background-color: #000000; color: #F0ED35; font-weight: bold; font-size: 14px; }
+        </style>
+      </head>
+      <body>
+        <table>
+          <tr>
+            <th colspan="11" style="font-size:16px; padding:10px;">Mantenimiento Abrilsur - LIQUIDACIÓN SEMANAL (${rangeText})</th>
+          </tr>
+          <tr>
+            <th class="sub-header">Personal</th>
+            <th class="sub-header">Sáb</th>
+            <th class="sub-header">Lun</th>
+            <th class="sub-header">Mar</th>
+            <th class="sub-header">Mié</th>
+            <th class="sub-header">Jue</th>
+            <th class="sub-header">Vie</th>
+            <th class="sub-header">Días Trab.</th>
+            <th class="sub-header">Jornal</th>
+            <th class="sub-header">Total a Cobrar</th>
+            <th class="sub-header">Tareas / Observaciones</th>
+          </tr>
+    `;
+
+    workers.filter(w=>w.activo).forEach(w=>{
+      const s = computeWorkerSummary(w);
+      totalSemana += s.total;
+
+      const mapCode = { 'presente': 'P', 'media': 'M', 'ausente': '-' };
+      
+      excelHtml += `<tr>
+        <td class="nombre">${escapeHtml(w.nombre)}</td>`;
+
+      s.dayStates.forEach(d => {
+        const code = mapCode[d.estado] || '-';
+        excelHtml += `<td class="${d.estado}">${code}</td>`;
+      });
+
+      const tareasTxt = s.tareas.join(' | ');
+
+      excelHtml += `
+        <td class="num">${s.dias}</td>
+        <td class="num">$${w.jornal.toLocaleString('es-AR')}</td>
+        <td class="num" style="font-weight:bold; color:#788214;">$${s.total.toLocaleString('es-AR')}</td>
+        <td style="text-align:left; font-size:11px;">${escapeHtml(tareasTxt)}</td>
+      </tr>`;
+    });
+
+    excelHtml += `
+          <tr class="total-row">
+            <td colspan="9" style="text-align:right; padding:8px;">TOTAL LIQUIDACIÓN SEMANA:</td>
+            <td class="num" style="padding:8px; color:#F0ED35;">$${totalSemana.toLocaleString('es-AR')}</td>
+            <td></td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob(['\uFEFF' + excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `Mantenimiento_AbrilSur_Semana (${isoDate(currentSaturday)} al ${isoDate(friEndOfWeek(currentSaturday))}).xls`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  async function exportMonthlyCsv(){
+    const mName = MESES[selectedMonthYear.month] + '_' + selectedMonthYear.year;
+    let excelHtml = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8">
+        <style>
+          table { border-collapse: collapse; font-family: Arial, sans-serif; }
+          th { background-color: #000000; color: #FFFFFF; font-weight: bold; border: 1px solid #788214; padding: 8px; text-align: center; }
+          td { border: 1px solid #DCDEC8; padding: 6px; text-align: center; }
+          .nombre { text-align: left; font-weight: bold; background-color: #F9FAF8; }
+          .num { text-align: right; }
+        </style>
+      </head>
+      <body>
+        <table>
+          <tr>
+            <th colspan="5" style="font-size:16px; padding:10px;">Mantenimiento Abrilsur - LIQUIDACIÓN MENSUAL (${mName})</th>
+          </tr>
+          <tr>
+            <th>Nombre</th>
+            <th>Días Acumulados</th>
+            <th>Jornal</th>
+            <th>Total Mes</th>
+            <th>Tareas Realizadas en el Mes</th>
+          </tr>
+    `;
+
+    const targetM = selectedMonthYear.month;
+    const targetY = selectedMonthYear.year;
+    const totals = {};
+    workers.filter(w=>w.activo).forEach(w => totals[w.id] = { nombre: w.nombre, jornal: w.jornal, dias: 0, tareasMes: [] });
+
+    const DIA_LABEL = {0:'Dom',1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb'};
+    const firstDay = isoDate(new Date(targetY, targetM, 1));
+    const lastDay = isoDate(new Date(targetY, targetM + 1, 0));
+    const { data, error } = await sb.from('registros').select('*').gte('fecha', firstDay).lte('fecha', lastDay).order('fecha');
+    if(error){ console.error('Error al exportar el mes', error); }
+
+    (data || []).forEach(r => {
+      if(!totals[r.trabajador_id]) return;
+      if(r.estado === 'presente') totals[r.trabajador_id].dias += 1;
+      else if(r.estado === 'media') totals[r.trabajador_id].dias += 0.5;
+
+      let det = [];
+      if(r.tarea && r.tarea.trim()) det.push(r.tarea.trim());
+      if(r.motivo && r.motivo.trim()) det.push('Obs: ' + r.motivo.trim());
+      if(det.length > 0){
+        const dayLabel = DIA_LABEL[new Date(r.fecha + 'T00:00:00').getDay()];
+        totals[r.trabajador_id].tareasMes.push(dayLabel + ' (' + r.fecha + '): ' + det.join(' - '));
+      }
+    });
+
+    workers.filter(w=>w.activo).forEach(w => {
+      const item = totals[w.id];
+      const tot = item.dias * item.jornal;
+      const tareasTxt = item.tareasMes.join(' | ');
+
+      excelHtml += `<tr>
+        <td class="nombre">${escapeHtml(item.nombre)}</td>
+        <td class="num">${item.dias}</td>
+        <td class="num">$${item.jornal.toLocaleString('es-AR')}</td>
+        <td class="num" style="font-weight:bold; color:#788214;">$${tot.toLocaleString('es-AR')}</td>
+        <td style="text-align:left; font-size:11px;">${escapeHtml(tareasTxt)}</td>
+      </tr>`;
+    });
+
+    excelHtml += `</table></body></html>`;
+
+    const blob = new Blob(['\uFEFF' + excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `Liquidacion_Mensual_${mName}.xls`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function exportTodosCsv(){
+    let excelHtml = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8">
+        <style>
+          table { border-collapse: collapse; font-family: Arial, sans-serif; }
+          th { background-color: #000000; color: #FFFFFF; font-weight: bold; border: 1px solid #788214; padding: 8px; text-align: center; }
+          td { border: 1px solid #DCDEC8; padding: 6px; text-align: left; }
+        </style>
+      </head>
+      <body>
+        <table>
+          <tr>
+            <th colspan="4" style="font-size:16px; padding:10px;">Mantenimiento Abrilsur - LISTADO DE PENDIENTES</th>
+          </tr>
+          <tr>
+            <th style="width:50px;">Nº</th>
+            <th>Tarea / Pendiente</th>
+            <th>Responsable / Materiales Faltantes</th>
+            <th>Estado</th>
+          </tr>
+    `;
+
+    todos.forEach((t, idx) => {
+      const est = t.estado === 'proceso' ? 'En Proceso' : (t.estado === 'completado' ? 'Completado' : 'Pendiente');
+      let resp = 'Sin asignar';
+      if(t.assignee === 'otro') resp = 'Otro (Tercerizado)';
+      else if(t.assignee) resp = workers.find(w=>w.id===t.assignee)?.nombre || 'Sin asignar';
+
+      const mat = t.materiales ? ` [Materiales: ${t.materiales}]` : '';
+
+      excelHtml += `<tr>
+        <td style="text-align:center; font-weight:bold;">#${idx+1}</td>
+        <td>${escapeHtml(t.titulo)}</td>
+        <td>${escapeHtml(resp + mat)}</td>
+        <td style="text-align:center;">${est}</td>
+      </tr>`;
+    });
+
+    excelHtml += `</table></body></html>`;
+
+    const blob = new Blob(['\uFEFF' + excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `Listado_Pendientes_AbrilSur.xls`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function setupRealtime(){
+    sb.channel('mantenimiento-abrilsur-changes')
+      .on('postgres_changes', { event:'*', schema:'public', table:'registros' }, async ()=>{
+        await loadWeek(currentSaturday);
+        if(currentTab === 'registro') renderWorkersList();
+        else if(currentTab === 'resumen') renderSummary();
+        else if(currentTab === 'mensual') renderMensual();
+      })
+      .on('postgres_changes', { event:'*', schema:'public', table:'trabajadores' }, async ()=>{
+        await loadWorkers();
+        if(currentTab === 'registro') renderWorkersList();
+        else if(currentTab === 'resumen') renderSummary();
+      })
+      .on('postgres_changes', { event:'*', schema:'public', table:'pendientes' }, async ()=>{
+        await loadTodos();
+        if(currentTab === 'pendientes') renderPendientes();
+      })
+      .subscribe();
+  }
+
+  let userRole = 'editor'; // 'editor' | 'viewer' | 'walter'
+  const VIEWER_EMAIL = 'roque@abrilsur.com';
+  const WALTER_EMAIL = 'walter@abrilsur.com';
+
+  function applyViewerRestrictions(){
+    if(userRole === 'editor') return;
+
+    // Restricciones comunes a roque y walter
+    document.getElementById('tabPendientes').style.display = 'none';
+    document.getElementById('fabAdd').style.display = 'none';
+    document.getElementById('exportBackup').style.display = 'none';
+    document.getElementById('importBackup').style.display = 'none';
+
+    if(userRole === 'viewer'){
+      document.getElementById('tabRegistro').style.display = 'none';
+      switchTab('resumen');
+    } else if(userRole === 'walter'){
+      document.getElementById('openManage').style.display = 'none';
+      switchTab('registro');
+    }
+  }
+
+  async function init(){
+    const { data: userData } = await sb.auth.getUser();
+    const email = userData && userData.user ? userData.user.email : '';
+    if(email === VIEWER_EMAIL) userRole = 'viewer';
+    else if(email === WALTER_EMAIL) userRole = 'walter';
+    else userRole = 'editor';
+
+    await Promise.all([ loadWorkers(), loadTodos(), loadWeek(currentSaturday) ]);
+    document.getElementById('weekRange').innerHTML = weekRangeLabel(currentSaturday) + '<small>usá ‹ › para moverte</small>';
+    renderDayPills();
+    renderWorkersList();
+
+    document.getElementById('prevWeek').onclick = ()=>goWeek(-1);
+    document.getElementById('nextWeek').onclick = ()=>goWeek(1);
+    
+    document.getElementById('prevMonth').onclick = ()=>goMonth(-1);
+    document.getElementById('nextMonth').onclick = ()=>goMonth(1);
+
+    document.getElementById('tabRegistro').onclick = ()=>switchTab('registro');
+    document.getElementById('tabResumen').onclick = ()=>switchTab('resumen');
+    document.getElementById('tabMensual').onclick = ()=>switchTab('mensual');
+    document.getElementById('tabPendientes').onclick = ()=>switchTab('pendientes');
+
+    document.getElementById('todoSearchInput').oninput = (e)=>{
+      todoSearchTerm = e.target.value;
+      renderPendientes();
+    };
+
+    document.getElementById('fabAdd').onclick = openAddModal;
+    document.getElementById('openManage').onclick = openManage;
+    document.getElementById('exportCsv').onclick = exportCsv;
+    document.getElementById('exportSummaryJpg').onclick = exportSummaryJpg;
+    document.getElementById('exportMonthlyCsv').onclick = exportMonthlyCsv;
+    document.getElementById('exportTodosCsv').onclick = exportTodosCsv;
+    document.getElementById('exportTodosPdf').onclick = exportTodosPdf;
+
+    // Backup handlers
+    document.getElementById('exportBackup').onclick = exportBackupData;
+    document.getElementById('importBackup').onclick = ()=>document.getElementById('fileBackupInput').click();
+    document.getElementById('fileBackupInput').onchange = importBackupData;
+
+    document.getElementById('btnLogout').onclick = async ()=>{
+      await sb.auth.signOut();
+      location.reload();
+    };
+
+    setupRealtime();
+    applyViewerRestrictions();
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+  }
+
+  async function showApp(){
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = '';
+    await init();
+  }
+
+  async function attemptLogin(){
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const errBox = document.getElementById('loginError');
+    errBox.style.display = 'none';
+    if(!email || !password){
+      errBox.textContent = 'Completá email y contraseña.';
+      errBox.style.display = 'block';
+      return;
+    }
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if(error){
+      errBox.textContent = 'Email o contraseña incorrectos.';
+      errBox.style.display = 'block';
+      return;
+    }
+    showApp();
+  }
+
+  document.getElementById('btnLogin').onclick = attemptLogin;
+  document.getElementById('loginPassword').onkeydown = (e)=>{ if(e.key === 'Enter') attemptLogin(); };
+
+  (async function boot(){
+    const { data } = await sb.auth.getSession();
+    if(data && data.session){ showApp(); }
+  })();
+})();
+</script>
+</body>
+</html>
