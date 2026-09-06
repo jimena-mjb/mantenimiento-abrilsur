@@ -2063,6 +2063,16 @@
     else if(email === WALTER_EMAIL) userRole = 'walter';
     else userRole = 'editor';
 
+    const { data: sessionData } = await sb.auth.getSession();
+    let jwtRole = '(sin sesión)';
+    if(sessionData && sessionData.session && sessionData.session.access_token){
+      try {
+        const payload = JSON.parse(atob(sessionData.session.access_token.split('.')[1]));
+        jwtRole = payload.role + ' | exp:' + new Date(payload.exp*1000).toLocaleString() + ' | ahora:' + new Date().toLocaleString();
+      } catch(e){ jwtRole = 'error al decodificar: ' + e.message; }
+    }
+    alert('DIAGNÓSTICO — Email: ' + email + '\nRol JWT: ' + jwtRole);
+
     await Promise.all([ loadWorkers(), loadTodos(), loadWeek(currentSaturday) ]);
     document.getElementById('weekRange').innerHTML = weekRangeLabel(currentSaturday) + '<small>usá ‹ › para moverte</small>';
     renderDayPills();
