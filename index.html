@@ -1791,6 +1791,10 @@
   function exportSummaryJpg(){
     const captureTarget = document.getElementById('summaryCaptureArea');
     const wrapper = document.createElement('div');
+    wrapper.style.position = 'fixed';
+    wrapper.style.top = '0';
+    wrapper.style.left = '0';
+    wrapper.style.zIndex = '-1';
     wrapper.style.padding = '20px';
     wrapper.style.background = '#F5F6F3';
     wrapper.style.fontFamily = 'Plus Jakarta Sans, sans-serif';
@@ -1805,8 +1809,17 @@
     ` + captureTarget.innerHTML;
 
     document.body.appendChild(wrapper);
+    const realHeight = wrapper.scrollHeight;
+    const realWidth = wrapper.scrollWidth;
 
-    html2canvas(wrapper, { scale: 2, backgroundColor: '#F5F6F3' }).then(canvas => {
+    html2canvas(wrapper, {
+      scale: 2,
+      backgroundColor: '#F5F6F3',
+      width: realWidth,
+      height: realHeight,
+      windowWidth: realWidth,
+      windowHeight: realHeight
+    }).then(canvas => {
       document.body.removeChild(wrapper);
       const link = document.createElement('a');
       link.download = `Mantenimiento_AbrilSur_Semana (${isoDate(currentSaturday)} al ${isoDate(friEndOfWeek(currentSaturday))}).jpg`;
