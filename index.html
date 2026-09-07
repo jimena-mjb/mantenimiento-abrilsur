@@ -586,6 +586,82 @@
     color: var(--brand-dark);
   }
 
+  .modal-date-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .calendar-card {
+    width: 54px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    flex-shrink: 0;
+  }
+  .calendar-card .dow {
+    background: var(--brand-olive);
+    color: #FFF;
+    font-size: 10px;
+    font-weight: 800;
+    text-align: center;
+    padding: 3px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .calendar-card .num {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-primary);
+    padding: 4px 0 6px;
+    background: var(--bg-card);
+  }
+  .modal-date-text { font-size: 13px; color: var(--text-muted); font-weight: 600; line-height: 1.3; }
+  .modal-date-text strong { display: block; color: var(--text-primary); font-size: 15px; }
+
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 14px;
+  }
+  .cal-dow {
+    text-align: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    padding-bottom: 4px;
+  }
+  .cal-cell {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid var(--line);
+    color: var(--text-muted);
+    background: var(--bg);
+  }
+  .cal-cell.cal-empty { border: none; background: none; }
+  .cal-cell.presente { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
+  .cal-cell.media { background: var(--half-bg); border-color: var(--half); color: var(--half); }
+  .cal-cell.ausente { background: var(--no-bg); border-color: var(--no); color: var(--no); }
+
+  .cal-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .cal-legend span { display: flex; align-items: center; gap: 4px; }
+  .cal-dot { width: 9px; height: 9px; border-radius: 3px; display: inline-block; border: 1px solid var(--line); }
+  .cal-dot.presente { background: var(--ok-bg); border-color: var(--ok); }
+  .cal-dot.media { background: var(--half-bg); border-color: var(--half); }
+  .cal-dot.ausente { background: var(--no-bg); border-color: var(--no); }
+  .cal-dot.sin-dato { background: var(--bg); border-color: var(--line); }
+
   .field { margin-bottom: 12px; }
   .field label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px; font-weight: 600; }
   .field input, .field select, .field textarea {
@@ -1007,11 +1083,14 @@
     const overlay = document.createElement('div');
     overlay.className = 'overlay overlay-center';
     const fechaDia = new Date(dateForDay(currentSaturday, currentDay) + 'T00:00:00');
-    const fechaLabel = dayItem.label + ' · ' + fmtShort(fechaDia) + ' ' + fechaDia.getFullYear();
+    const nombreMes = MESES[fechaDia.getMonth()];
     overlay.innerHTML = `
       <div class="sheet">
         <h2>${escapeHtml(w.nombre)} <span class="close" style="cursor:pointer;">✕</span></h2>
-        <div style="font-size:12px; color:var(--text-muted); text-transform:uppercase; font-weight:700; letter-spacing:0.5px; margin-bottom:14px;">${fechaLabel}</div>
+        <div class="modal-date-row">
+          <div class="calendar-card"><div class="dow">${dayItem.label}</div><div class="num">${fechaDia.getDate()}</div></div>
+          <div class="modal-date-text">Cargando asistencia de<strong>${nombreMes} ${fechaDia.getFullYear()}</strong></div>
+        </div>
         <div class="stamp-row">
           <button data-estado="presente" class="stamp">Presente</button>
           <button data-estado="media" class="stamp">Media</button>
@@ -1136,6 +1215,59 @@
     document.getElementById('monthRange').innerHTML = MESES[selectedMonthYear.month] + ' ' + selectedMonthYear.year + '<small>usá ‹ › para cambiar de mes</small>';
   }
 
+  function buildCalendarGrid(year, month){
+    const firstDay = new Date(year, month, 1);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const startOffset = (firstDay.getDay() + 6) % 7; // 0 = Lunes
+    const cells = [];
+    for(let i=0; i<startOffset; i++) cells.push(null);
+    for(let d=1; d<=daysInMonth; d++) cells.push(new Date(year, month, d));
+    while(cells.length % 7 !== 0) cells.push(null);
+    return cells;
+  }
+
+  function openMonthlyCalendar(w, dayMap){
+    const year = selectedMonthYear.year;
+    const month = selectedMonthYear.month;
+    const cells = buildCalendarGrid(year, month);
+    const dowLabels = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+
+    let gridHtml = dowLabels.map(d => `<div class="cal-dow">${d}</div>`).join('');
+    cells.forEach(date => {
+      if(!date){ gridHtml += `<div class="cal-cell cal-empty"></div>`; return; }
+      const iso = isoDate(date);
+      const rec = dayMap[iso];
+      let cls = 'sin-dato';
+      let title = '';
+      if(rec){
+        if(rec.estado === 'presente') cls = 'presente';
+        else if(rec.estado === 'media') cls = 'media';
+        else if(rec.estado === 'ausente') cls = 'ausente';
+        title = [rec.tarea, rec.motivo].filter(Boolean).join(' - ');
+      }
+      gridHtml += `<div class="cal-cell ${cls}" title="${escapeHtml(title)}">${date.getDate()}</div>`;
+    });
+
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay overlay-center';
+    overlay.innerHTML = `
+      <div class="sheet">
+        <h2>${escapeHtml(w.nombre)} <span class="close" style="cursor:pointer;">✕</span></h2>
+        <div style="background:var(--brand-dark); color:#FFFFFF; text-align:center; font-size:12px; text-transform:uppercase; font-weight:700; letter-spacing:0.5px; padding:8px 0; border-radius:8px; margin-bottom:16px;">${MESES[month]} ${year}</div>
+        <div class="cal-grid">${gridHtml}</div>
+        <div class="cal-legend">
+          <span><i class="cal-dot presente"></i>Presente</span>
+          <span><i class="cal-dot media"></i>Media</span>
+          <span><i class="cal-dot ausente"></i>Ausente</span>
+          <span><i class="cal-dot sin-dato"></i>Sin dato</span>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelector('.close').onclick = ()=>overlay.remove();
+    overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
+  }
+
   async function goMonth(delta){
     let newM = selectedMonthYear.month + delta;
     let newY = selectedMonthYear.year;
@@ -1155,7 +1287,11 @@
     const targetY = selectedMonthYear.year;
     
     const totals = {};
-    workers.filter(w=>w.activo).forEach(w => totals[w.id] = { nombre: w.nombre, jornal: w.jornal, dias: 0, total: 0 });
+    const monthlyDetail = {};
+    workers.filter(w=>w.activo).forEach(w => {
+      totals[w.id] = { nombre: w.nombre, jornal: w.jornal, dias: 0, total: 0 };
+      monthlyDetail[w.id] = {};
+    });
 
     let grand = 0;
 
@@ -1167,6 +1303,7 @@
       if(totals[r.trabajador_id]){
         if(r.estado === 'presente') totals[r.trabajador_id].dias += 1;
         else if(r.estado === 'media') totals[r.trabajador_id].dias += 0.5;
+        monthlyDetail[r.trabajador_id][r.fecha] = { estado: r.estado, tarea: r.tarea||'', motivo: r.motivo||'' };
       }
     });
 
@@ -1177,6 +1314,7 @@
 
       const card = document.createElement('div');
       card.className = 'sum-card';
+      card.style.cursor = 'pointer';
       card.innerHTML = `
         <div class="sum-head">
           <div class="avatar" style="width:34px;height:34px;font-size:12px;">${initials(w.nombre)}</div>
@@ -1187,6 +1325,7 @@
           <strong>${item.dias} días trabajados</strong> en el mes (Jornal ${money(item.jornal)})
         </div>
       `;
+      card.onclick = ()=>openMonthlyCalendar(w, monthlyDetail[w.id]);
       el.appendChild(card);
     });
 
