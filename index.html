@@ -2117,12 +2117,14 @@
       errBox.style.display = 'block';
       return;
     }
-    const { error } = await sb.auth.signInWithPassword({ email, password });
+    const { data: loginData, error } = await sb.auth.signInWithPassword({ email, password });
     if(error){
       errBox.textContent = 'Email o contraseña incorrectos.';
       errBox.style.display = 'block';
       return;
     }
+    const tok = loginData && loginData.session ? loginData.session.access_token : null;
+    alert('DIAGNÓSTICO LOGIN — ¿Hay sesión?: ' + (!!(loginData && loginData.session)) + '\nToken (primeros 25): ' + (tok ? tok.slice(0,25) : 'NINGUNO'));
     showApp();
   }
 
