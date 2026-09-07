@@ -878,16 +878,8 @@
 
   async function loadWorkers(){
     const { data, error } = await sb.from('trabajadores').select('*').order('nombre');
-    if(error){
-      console.error('Error al cargar personal', error);
-      alert('DIAGNÓSTICO — Error al cargar personal:\n' + JSON.stringify(error, null, 2));
-      workers = [];
-      return;
-    }
+    if(error){ console.error('Error al cargar personal', error); workers = []; return; }
     workers = data || [];
-    if(workers.length === 0){
-      alert('DIAGNÓSTICO — La consulta funcionó pero trajo 0 filas. Respuesta cruda: ' + JSON.stringify(data));
-    }
   }
 
   async function saveWorkers(){
@@ -2063,16 +2055,6 @@
     else if(email === WALTER_EMAIL) userRole = 'walter';
     else userRole = 'editor';
 
-    const { data: sessionData } = await sb.auth.getSession();
-    let jwtRole = '(sin sesión)';
-    if(sessionData && sessionData.session && sessionData.session.access_token){
-      try {
-        const payload = JSON.parse(atob(sessionData.session.access_token.split('.')[1]));
-        jwtRole = payload.role + ' | exp:' + new Date(payload.exp*1000).toLocaleString() + ' | ahora:' + new Date().toLocaleString();
-      } catch(e){ jwtRole = 'error al decodificar: ' + e.message; }
-    }
-    alert('DIAGNÓSTICO — Email: ' + email + '\nRol JWT: ' + jwtRole);
-
     await Promise.all([ loadWorkers(), loadTodos(), loadWeek(currentSaturday) ]);
     document.getElementById('weekRange').innerHTML = weekRangeLabel(currentSaturday) + '<small>usá ‹ › para moverte</small>';
     renderDayPills();
@@ -2149,7 +2131,16 @@
 
   (async function boot(){
     const { data } = await sb.auth.getSession();
-    if(data && data.session){ showApp(); }
+    if(data && data.session){
+      // Verificamos contra el servidor que la sesión guardada siga siendo válida
+      // (evita quedar "medio logueado" con una sesión vencida, que no puede leer datos).
+      const { data: check, error: checkErr } = await sb.auth.getUser();
+      if(check && check.user && !checkErr){
+        showApp();
+      } else {
+        await sb.auth.signOut();
+      }
+    }
   })();
 })();
 </script>
