@@ -198,7 +198,7 @@
 
   .daypills button {
     flex: 1;
-    padding: 10px 0 14px;
+    padding: 10px 0;
     border-radius: 8px;
     border: 1px solid var(--line);
     background: var(--bg-card);
@@ -206,29 +206,12 @@
     font-weight: 600;
     color: var(--text-muted);
     cursor: pointer;
-    position: relative;
   }
 
   .daypills button.active {
     background: var(--brand-olive);
     color: #FFFFFF;
     border-color: var(--brand-olive);
-  }
-
-  .daypills button.has-data::after {
-    content: '';
-    position: absolute;
-    bottom: 5px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: var(--text-muted);
-  }
-
-  .daypills button.active.has-data::after {
-    background: #FFFFFF;
   }
 
   .worker {
@@ -921,20 +904,16 @@
     if(error) console.error('Error al guardar personal', error);
   }
 
-  let daysWithData = new Set();
-
   async function loadWeek(saturday){
     const dates = DAYS.map(d => dateForDay(saturday, d.key));
     const { data, error } = await sb.from('registros').select('*').in('fecha', dates);
     weekData = {};
-    daysWithData = new Set();
     if(error){ console.error('Error al cargar semana', error); return; }
     (data || []).forEach(r => {
       const dayItem = DAYS.find(d => dateForDay(saturday, d.key) === r.fecha);
       if(!dayItem) return;
       if(!weekData[r.trabajador_id]) weekData[r.trabajador_id] = {};
       weekData[r.trabajador_id][dayItem.key] = { estado:r.estado, tarea:r.tarea||'', motivo:r.motivo||'' };
-      daysWithData.add(dayItem.key);
     });
   }
 
@@ -953,10 +932,6 @@
       });
     });
     if(rows.length === 0) return;
-    rows.forEach(r => {
-      const dayItem = DAYS.find(d => dateForDay(saturday, d.key) === r.fecha);
-      if(dayItem) daysWithData.add(dayItem.key);
-    });
     const { error } = await sb.from('registros').upsert(rows, { onConflict:'trabajador_id,fecha' });
     if(error) console.error('Error al guardar semana', error);
   }
@@ -990,7 +965,6 @@
       btn.textContent = d.label;
       if(d.key === currentDay) btn.classList.add('active');
       if(isTodayInWeek(currentSaturday, d.key)) btn.classList.add('today');
-      if(daysWithData.has(d.key)) btn.classList.add('has-data');
       btn.onclick = ()=>{ currentDay = d.key; renderDayPills(); renderWorkersList(); };
       el.appendChild(btn);
     });
@@ -1055,7 +1029,7 @@
     `;
     document.body.appendChild(overlay);
 
-    const close = ()=>{ overlay.remove(); renderDayPills(); renderWorkersList(); };
+    const close = ()=>{ overlay.remove(); renderWorkersList(); };
     overlay.querySelector('.close').onclick = close;
     overlay.onclick = (e)=>{ if(e.target===overlay) close(); };
 
@@ -2052,7 +2026,6 @@
     sb.channel('mantenimiento-abrilsur-changes')
       .on('postgres_changes', { event:'*', schema:'public', table:'registros' }, async ()=>{
         await loadWeek(currentSaturday);
-        renderDayPills();
         if(currentTab === 'registro') renderWorkersList();
         else if(currentTab === 'resumen') renderSummary();
         else if(currentTab === 'mensual') renderMensual();
