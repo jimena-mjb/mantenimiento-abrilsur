@@ -656,6 +656,19 @@
     font-weight: 600;
   }
   .cal-legend span { display: flex; align-items: center; gap: 4px; }
+
+  /* Restricciones por rol (con !important para que nada las pueda pisar) */
+  body.role-viewer #tabRegistro,
+  body.role-viewer #tabPendientes,
+  body.role-viewer #fabAdd,
+  body.role-viewer #exportBackup,
+  body.role-viewer #importBackup { display: none !important; }
+
+  body.role-walter #tabPendientes,
+  body.role-walter #fabAdd,
+  body.role-walter #exportBackup,
+  body.role-walter #importBackup,
+  body.role-walter #openManage { display: none !important; }
   .cal-dot { width: 9px; height: 9px; border-radius: 3px; display: inline-block; border: 1px solid var(--line); }
   .cal-dot.presente { background: var(--ok-bg); border-color: var(--ok); }
   .cal-dot.media { background: var(--half-bg); border-color: var(--half); }
@@ -2225,25 +2238,15 @@
   const WALTER_EMAIL = 'walter@abrilsur.com';
 
   function applyViewerRestrictions(){
+    document.body.classList.remove('role-viewer', 'role-walter');
     if(userRole === 'editor') return;
 
     if(userRole === 'viewer'){
+      document.body.classList.add('role-viewer');
       switchTab('resumen');
     } else if(userRole === 'walter'){
+      document.body.classList.add('role-walter');
       switchTab('registro');
-    }
-
-    // Restricciones comunes a roque y walter (se aplican DESPUÉS de switchTab
-    // para que switchTab no las pise, ya que esa función toca fabAdd también)
-    document.getElementById('tabPendientes').style.display = 'none';
-    document.getElementById('fabAdd').style.display = 'none';
-    document.getElementById('exportBackup').style.display = 'none';
-    document.getElementById('importBackup').style.display = 'none';
-
-    if(userRole === 'viewer'){
-      document.getElementById('tabRegistro').style.display = 'none';
-    } else if(userRole === 'walter'){
-      document.getElementById('openManage').style.display = 'none';
     }
   }
 
