@@ -799,7 +799,23 @@
 (function(){
   const SUPABASE_URL = 'https://iujvfpylzkjeeipaxxzj.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_49twpNKWQVliXQH-kRf-UA_acS7n0yl';
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  let currentAccessToken = null;
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    global: {
+      fetch: (url, options = {}) => {
+        const headers = new Headers(options.headers || {});
+        if (currentAccessToken) {
+          headers.set('Authorization', 'Bearer ' + currentAccessToken);
+        }
+        return fetch(url, { ...options, headers });
+      }
+    }
+  });
+
+  sb.auth.onAuthStateChange((_event, session) => {
+    currentAccessToken = session ? session.access_token : null;
+  });
 
   const DAYS = [
     {key:'S', label:'Sáb', offset: 0},
@@ -2123,8 +2139,7 @@
       errBox.style.display = 'block';
       return;
     }
-    const tok = loginData && loginData.session ? loginData.session.access_token : null;
-    alert('DIAGNÓSTICO LOGIN — ¿Hay sesión?: ' + (!!(loginData && loginData.session)) + '\nToken (primeros 25): ' + (tok ? tok.slice(0,25) : 'NINGUNO'));
+    if(loginData && loginData.session){ currentAccessToken = loginData.session.access_token; }
     showApp();
   }
 
@@ -2138,6 +2153,7 @@
       // (evita quedar "medio logueado" con una sesión vencida, que no puede leer datos).
       const { data: check, error: checkErr } = await sb.auth.getUser();
       if(check && check.user && !checkErr){
+        currentAccessToken = data.session.access_token;
         showApp();
       } else {
         await sb.auth.signOut();
