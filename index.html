@@ -2227,7 +2227,14 @@
   function applyViewerRestrictions(){
     if(userRole === 'editor') return;
 
-    // Restricciones comunes a roque y walter
+    if(userRole === 'viewer'){
+      switchTab('resumen');
+    } else if(userRole === 'walter'){
+      switchTab('registro');
+    }
+
+    // Restricciones comunes a roque y walter (se aplican DESPUÉS de switchTab
+    // para que switchTab no las pise, ya que esa función toca fabAdd también)
     document.getElementById('tabPendientes').style.display = 'none';
     document.getElementById('fabAdd').style.display = 'none';
     document.getElementById('exportBackup').style.display = 'none';
@@ -2235,10 +2242,8 @@
 
     if(userRole === 'viewer'){
       document.getElementById('tabRegistro').style.display = 'none';
-      switchTab('resumen');
     } else if(userRole === 'walter'){
       document.getElementById('openManage').style.display = 'none';
-      switchTab('registro');
     }
   }
 
